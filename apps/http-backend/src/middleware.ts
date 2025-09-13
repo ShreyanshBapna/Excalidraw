@@ -16,9 +16,5 @@ export const middleware = (req:Request, res: Response, next: NextFunction) => {
     // @ts-ignore
     req.userId = decode.id;
     
-    return res.json({
-        message: "Authorized"
-    })
     next();
-    
 }

@@ -7,22 +7,22 @@ import { middleware } from "./middleware";
 import { createUserSchema, signinSchema , createRoomSchema} from "@repo/common/test"
 import { prismaClient } from "@repo/db/client"
 
-
 const app = express();
 app.use(express.json());
 
 app.post("/signup", async (req: Request, res: Response) => {
 
-    const data = createUserSchema.safeParse(req.body);
+    const parseData = createUserSchema.safeParse(req.body);
 
-    if(!data.success){
+    if(!parseData.success){
         return res.json({
             message: "Invalid Credentail!!",
-            error: data.error
+            error: parseData.error
         })
     }
 
     const {email, name, password} = req.body;
+
     const hashpassword = await bcrypt.hash(password, 10);
 
     try {
@@ -98,8 +98,7 @@ app.post("/signin", async (req: Request, res: Response) => {
     }
 })
 
-app.post("/create-room", middleware, (req: Request, res: Response) => {
-    
+app.post("/create-room", middleware, async(req: Request, res: Response) => {
     const data = createRoomSchema.safeParse(req.body);
 
     if(!data.success){
@@ -107,12 +106,34 @@ app.post("/create-room", middleware, (req: Request, res: Response) => {
             message: "Invalid Credentail!!",
             error: data.error
         })
-    }
+    };
 
-    return res.json({
-        message: "Signin"
-    })
+    const slug = req.body.name;
+    // @ts-ignore
+    const adminId = req.userId;
+
+    try {
+        const response = await prismaClient.room.create({
+            data: {
+                slug,
+                adminId
+            }
+        });
+
+        return res.json({
+            roomId: response.id, 
+            message: "Successfully Create the room"
+        })
+
+    } catch(e) {    
+        return res.json({
+            message: "Something went wrong!!",
+            error: e
+        })
+    }
 })
 
-
+app.get("/chats/:room", middleware, (req: Request, res: Response) => {
+    
+})
 app.listen(3001);
